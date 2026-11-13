@@ -1,0 +1,60 @@
+services:
+  api:
+    build: .
+    environment:
+      APP_ENV: production
+      APP_HOST: 0.0.0.0
+      APP_PORT: "8000"
+      DATABASE_PATH: /data/events.sqlite3
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:?Configure GITHUB_WEBHOOK_SECRET in .env}
+      GITHUB_REPOSITORY: ${GITHUB_REPOSITORY:-healthdevio/projeto-itia-dois}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      WEBHOOK_MAX_BODY_BYTES: ${WEBHOOK_MAX_BODY_BYTES:-1048576}
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - monitor_data:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).read()",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  worker:
+    build: .
+    command: ["python", "-m", "app.worker"]
+    environment:
+      APP_ENV: production
+      DATABASE_PATH: /data/events.sqlite3
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:?Configure TELEGRAM_BOT_TOKEN in .env}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:?Configure TELEGRAM_CHAT_ID in .env}
+      TELEGRAM_MESSAGE_THREAD_ID: ${TELEGRAM_MESSAGE_THREAD_ID:-}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      WORKER_POLL_INTERVAL_SECONDS: ${WORKER_POLL_INTERVAL_SECONDS:-1}
+      WORKER_LEASE_SECONDS: ${WORKER_LEASE_SECONDS:-60}
+      WORKER_MAX_ATTEMPTS: ${WORKER_MAX_ATTEMPTS:-8}
+      WORKER_RETRY_BASE_SECONDS: ${WORKER_RETRY_BASE_SECONDS:-2}
+      DEDUP_RETENTION_DAYS: ${DEDUP_RETENTION_DAYS:-90}
+    volumes:
+      - monitor_data:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  monitor_data:
