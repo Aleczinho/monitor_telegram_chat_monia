@@ -4,14 +4,14 @@ services:
     environment:
       APP_ENV: production
       APP_HOST: 0.0.0.0
-      APP_PORT: "8000"
+      APP_PORT: "8067"
       DATABASE_PATH: /data/events.sqlite3
       GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:?Configure GITHUB_WEBHOOK_SECRET in .env}
       GITHUB_REPOSITORY: ${GITHUB_REPOSITORY:-healthdevio/projeto-itia-dois}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       WEBHOOK_MAX_BODY_BYTES: ${WEBHOOK_MAX_BODY_BYTES:-1048576}
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:8067:8067"
     volumes:
       - monitor_data:/data
     read_only: true
@@ -24,7 +24,7 @@ services:
           "CMD",
           "python",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).read()",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8067/health', timeout=3).read()",
         ]
       interval: 30s
       timeout: 5s

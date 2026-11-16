@@ -137,7 +137,7 @@ docker compose up -d --build
 docker compose logs -f
 ```
 
-O Compose mantém o SQLite em um volume nomeado e expõe a API somente em `127.0.0.1:8000`, adequada para um proxy reverso local. O worker não publica portas. A imagem roda como usuário não privilegiado, com filesystem raiz somente leitura e `/tmp` temporário.
+O Compose mantém o SQLite em um volume nomeado e expõe a API somente em `127.0.0.1:8067`, adequada para um proxy reverso local. O worker não publica portas. A imagem roda como usuário não privilegiado, com filesystem raiz somente leitura e `/tmp` temporário.
 
 Para parar sem remover o banco:
 
@@ -149,8 +149,8 @@ Não use `docker compose down -v` se quiser preservar a fila e o histórico de d
 
 ## Implantação em Linux/Oracle Cloud
 
-- Configure DNS e HTTPS em um proxy reverso (por exemplo, Nginx ou Caddy) apontando para `127.0.0.1:8000`.
-- Na Security List/NSG e no firewall do host, permita entrada somente em `443` (e `80` apenas se necessário para emissão/renovação do certificado). Não publique a porta 8000 diretamente na internet nem exponha o arquivo SQLite.
+- Configure DNS e HTTPS em um proxy reverso (por exemplo, Nginx ou Caddy) apontando para `127.0.0.1:8067`.
+- Na Security List/NSG e no firewall do host, permita entrada somente em `443` (e `80` apenas se necessário para emissão/renovação do certificado). Não publique a porta 8067 diretamente na internet nem exponha o arquivo SQLite.
 - Permita saída HTTPS para a Telegram Bot API.
 - Restrinja permissões do `.env`, proteja o volume Docker e faça backup periódico do banco. O banco contém notificações e pode incluir trechos de comentários de PR.
 - Monitore `docker compose ps`, `/health/ready`, o tamanho/idade dos itens pendentes e os logs JSON. A readiness verifica SQLite, não Telegram; uma falha no Telegram deve acumular fila, não derrubar a API.
