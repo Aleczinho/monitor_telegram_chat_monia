@@ -147,16 +147,19 @@ docker compose down
 
 Não use `docker compose down -v` se quiser preservar a fila e o histórico de deduplicação.
 
-### Portainer com Upload
+### Docker Swarm pelo Portainer
 
-O arquivo `docker-compose.portainer.yml` é para **Stacks → Add stack → Upload** e usa a imagem `git-telegram-monitor:latest`, em vez de construir a imagem durante o deploy.
+O arquivo `docker-stack.yml` é uma Stack Swarm para **Stacks → Add stack → Upload**. Ele define uma réplica da API e do worker, ambos fixados no nó `compute01`, com políticas de reinício e atualização. A API publica a porta `8067` em modo host; restrinja essa porta no firewall para que o acesso externo passe pelo proxy HTTPS.
 
-1. Em **Images → Build a new image**, construa `git-telegram-monitor:latest` usando o repositório público `https://github.com/Aleczinho/monitor_telegram_chat_omnia` como fonte e `Dockerfile` como caminho do Dockerfile. Escolha o mesmo endpoint/nó Docker onde a Stack será implantada.
-2. Em **Stacks → Add stack → Upload**, envie `docker-compose.portainer.yml`.
-3. Configure `GITHUB_WEBHOOK_SECRET`, `TELEGRAM_BOT_TOKEN` e `TELEGRAM_CHAT_ID` nas variáveis da Stack. Defina `GITHUB_REPOSITORY` se o repositório monitorado for diferente do padrão.
-4. Implante a Stack. A porta da API fica limitada ao loopback do servidor em `127.0.0.1:8067`; configure o proxy reverso HTTPS para encaminhar para esse endereço.
+A stack usa a imagem pública `ghcr.io/aleczinho/monitor_telegram_chat_omnia:latest`. O workflow `.github/workflows/publish-container.yml` constrói imagens para `linux/amd64` e `linux/arm64` e publica no GHCR quando há mudanças no código na branch `main`.
 
-O endpoint do Portainer precisa ser Docker Standalone. Em Swarm, construa e publique a imagem em um registry acessível aos nós antes de implantar a Stack.
+1. Aguarde a execução do workflow **Publish container image** após o push ao GitHub.
+2. Na página do pacote `monitor_telegram_chat_omnia` em **GitHub → Packages**, altere a visibilidade para **Public** para que os nós Swarm possam baixar a imagem sem credenciais.
+3. No Portainer conectado ao manager Swarm, abra **Stacks → Add stack → Upload** e envie `docker-stack.yml`.
+4. Configure `GITHUB_WEBHOOK_SECRET`, `TELEGRAM_BOT_TOKEN` e `TELEGRAM_CHAT_ID` nas variáveis da Stack. Ajuste `GITHUB_REPOSITORY` para o repositório do Chat Mia, se não for o padrão.
+5. Implante a Stack. O proxy HTTPS no host deve encaminhar para `127.0.0.1:8067`.
+
+O nome do nó `compute01` deve corresponder exatamente a um nó do Swarm, e a porta `8067` precisa estar livre nele. O volume SQLite é local, então API e worker ficam fixados no mesmo nó para compartilhar os dados. O arquivo `docker-compose.yml` continua sendo o caminho de execução local/Docker Compose; não o use como Stack Swarm.
 
 ## Implantação em Linux/Oracle Cloud
 
@@ -164,7 +167,7 @@ O endpoint do Portainer precisa ser Docker Standalone. Em Swarm, construa e publ
 - Na Security List/NSG e no firewall do host, permita entrada somente em `443` (e `80` apenas se necessário para emissão/renovação do certificado). Não publique a porta 8067 diretamente na internet nem exponha o arquivo SQLite.
 - Permita saída HTTPS para a Telegram Bot API.
 - Restrinja permissões do `.env`, proteja o volume Docker e faça backup periódico do banco. O banco contém notificações e pode incluir trechos de comentários de PR.
-- Monitore `docker compose ps`, `/health/ready`, o tamanho/idade dos itens pendentes e os logs JSON. A readiness verifica SQLite, não Telegram; uma falha no Telegram deve acumular fila, não derrubar a API.
+- Monitore os serviços da Stack no Portainer ou com `docker stack services NOME_DA_STACK`, `/health/ready`, o tamanho/idade dos itens pendentes e os logs JSON. A readiness verifica SQLite, não Telegram; uma falha no Telegram deve acumular fila, não derrubar a API.
 
 ## Endpoints
 

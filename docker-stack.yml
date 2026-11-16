@@ -1,6 +1,8 @@
+version: "3.8"
+
 services:
   api:
-    image: git-telegram-monitor:latest
+    image: ghcr.io/aleczinho/monitor_telegram_chat_omnia:latest
     environment:
       APP_ENV: production
       APP_HOST: 0.0.0.0
@@ -11,13 +13,15 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       WEBHOOK_MAX_BODY_BYTES: ${WEBHOOK_MAX_BODY_BYTES:-1048576}
     ports:
-      - "127.0.0.1:8067:8067"
+      - target: 8067
+        published: 8067
+        protocol: tcp
+        mode: host
     volumes:
       - monitor_data:/data
     read_only: true
     tmpfs:
       - /tmp
-    restart: unless-stopped
     healthcheck:
       test:
         [
@@ -30,9 +34,28 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == compute01
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: stop-first
+      rollback_config:
+        parallelism: 1
+        delay: 5s
+        order: stop-first
 
   worker:
-    image: git-telegram-monitor:latest
+    image: ghcr.io/aleczinho/monitor_telegram_chat_omnia:latest
     command: ["python", "-m", "app.worker"]
     environment:
       APP_ENV: production
@@ -51,10 +74,26 @@ services:
     read_only: true
     tmpfs:
       - /tmp
-    restart: unless-stopped
-    depends_on:
-      api:
-        condition: service_healthy
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == compute01
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: stop-first
+      rollback_config:
+        parallelism: 1
+        delay: 5s
+        order: stop-first
 
 volumes:
   monitor_data:
+    driver: local
