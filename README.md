@@ -147,6 +147,17 @@ docker compose down
 
 Não use `docker compose down -v` se quiser preservar a fila e o histórico de deduplicação.
 
+### Portainer com Upload
+
+O arquivo `docker-compose.portainer.yml` é para **Stacks → Add stack → Upload** e usa a imagem `git-telegram-monitor:latest`, em vez de construir a imagem durante o deploy.
+
+1. Em **Images → Build a new image**, construa `git-telegram-monitor:latest` usando o repositório público `https://github.com/Aleczinho/monitor_telegram_chat_omnia` como fonte e `Dockerfile` como caminho do Dockerfile. Escolha o mesmo endpoint/nó Docker onde a Stack será implantada.
+2. Em **Stacks → Add stack → Upload**, envie `docker-compose.portainer.yml`.
+3. Configure `GITHUB_WEBHOOK_SECRET`, `TELEGRAM_BOT_TOKEN` e `TELEGRAM_CHAT_ID` nas variáveis da Stack. Defina `GITHUB_REPOSITORY` se o repositório monitorado for diferente do padrão.
+4. Implante a Stack. A porta da API fica limitada ao loopback do servidor em `127.0.0.1:8067`; configure o proxy reverso HTTPS para encaminhar para esse endereço.
+
+O endpoint do Portainer precisa ser Docker Standalone. Em Swarm, construa e publique a imagem em um registry acessível aos nós antes de implantar a Stack.
+
 ## Implantação em Linux/Oracle Cloud
 
 - Configure DNS e HTTPS em um proxy reverso (por exemplo, Nginx ou Caddy) apontando para `127.0.0.1:8067`.
