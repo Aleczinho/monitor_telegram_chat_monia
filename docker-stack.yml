@@ -3,6 +3,8 @@ version: "3.8"
 services:
   api:
     image: ghcr.io/aleczinho/monitor_telegram_chat_omnia:latest
+    networks:
+      - omnia
     environment:
       APP_ENV: production
       APP_HOST: 0.0.0.0
@@ -56,6 +58,8 @@ services:
 
   worker:
     image: ghcr.io/aleczinho/monitor_telegram_chat_omnia:latest
+    networks:
+      - omnia
     command: ["python", "-m", "app.worker"]
     environment:
       APP_ENV: production
@@ -97,3 +101,8 @@ services:
 volumes:
   monitor_data:
     driver: local
+
+networks:
+  omnia:
+    external: true
+    name: projeto-itia-2_omnia_net

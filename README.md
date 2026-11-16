@@ -149,7 +149,7 @@ Não use `docker compose down -v` se quiser preservar a fila e o histórico de d
 
 ### Docker Swarm pelo Portainer
 
-O arquivo `docker-stack.yml` é uma Stack Swarm para **Stacks → Add stack → Upload**. Ele define uma réplica da API e do worker, ambos fixados no nó `compute01`, com políticas de reinício e atualização. A API publica a porta `8067` em modo host; restrinja essa porta no firewall para que o acesso externo passe pelo proxy HTTPS.
+O arquivo `docker-stack.yml` é uma Stack Swarm para **Stacks → Add stack → Upload**. Ele define uma réplica da API e do worker, ambos fixados no nó `compute01`, com políticas de reinício e atualização. Os serviços usam a rede overlay externa `projeto-itia-2_omnia_net` já criada pelo Chat Mia, evitando criar outra rede padrão. A API publica a porta `8067` em modo host; restrinja essa porta no firewall para que o acesso externo passe pelo proxy HTTPS.
 
 A stack usa a imagem pública `ghcr.io/aleczinho/monitor_telegram_chat_omnia:latest`. O workflow `.github/workflows/publish-container.yml` constrói imagens para `linux/amd64` e `linux/arm64` e publica no GHCR quando há mudanças no código na branch `main`.
 
